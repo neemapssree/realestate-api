@@ -1,0 +1,106 @@
+
+Enum user_role {
+  ADMIN
+  AGENT
+  CUSTOMER
+}
+
+Enum property_status {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+Enum lead_status {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  LOST
+}
+
+Table users {
+  id uuid [pk]
+  name varchar(120)
+  email varchar(255) [unique]
+  password_hash varchar(255)
+  role user_role
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table agents {
+  id uuid [pk]
+  user_id uuid [unique, ref: - users.id]
+  phone varchar(30)
+  bio text
+  created_at timestamptz
+}
+
+Table areas {
+  id uuid [pk]
+  name varchar(120)
+  city varchar(120)
+  slug varchar(160) [unique]
+}
+
+Table properties {
+  id uuid [pk]
+  agent_id uuid [ref: >? agents.id]
+  area_id uuid [ref: >? areas.id]
+  title varchar(200)
+  description text
+  property_type varchar(50)
+  listing_type varchar(30)
+  price numeric(14,2)
+  bedrooms int
+  bathrooms int
+  area_sqft numeric(10,2)
+  status property_status
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table property_images {
+  id uuid [pk]
+  property_id uuid [ref: >? properties.id]
+  image_url text
+  alt_text varchar(255)
+  sort_order int
+  created_at timestamptz
+}
+
+Table leads {
+  id uuid [pk]
+  property_id uuid [ref: >? properties.id]
+  customer_id uuid [ref: >? users.id, null]
+  assigned_agent_id uuid [ref: >? agents.id, null]
+  name varchar(120)
+  email varchar(255)
+  phone varchar(30)
+  message text
+  status lead_status
+  idempotency_key varchar(255) [unique, null]
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table lead_activities {
+  id uuid [pk]
+  lead_id uuid [ref: >? leads.id]
+  actor_user_id uuid [ref: >? users.id, null]
+  activity_type varchar(60)
+  note text
+  created_at timestamptz
+}
+
+Table favorites {
+  id uuid [pk]
+  user_id uuid [ref: >? users.id]
+  property_id uuid [ref: >? properties.id]
+  created_at timestamptz
+
+  indexes {
+    (user_id, property_id) [unique]
+  }
+}
